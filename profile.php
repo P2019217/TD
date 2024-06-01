@@ -1,34 +1,48 @@
-<?php 
-   session_start();
+<?php
+session_start();
+include("php/config.php");
 
-   include("php/config.php");
+if (!isset($_SESSION['valid'])) {
+    header("Location: index.php");
+    exit();
+}
 
-   if(isset($_POST['submit'])){
-        $first_name = $_POST['first_name'];
-        $last_name = $_POST['last_name'];
-        $username = $_POST['username'];
-        $email = $_POST['email'];
-        $password = $_POST['password'];
+$id = $_SESSION['id'];
 
-        $duplicate = mysqli_query($con, "SELECT * FROM users WHERE Email='$email' OR Username='$username'");
+$query = mysqli_query($con, "SELECT * FROM users WHERE Id='$id'");
+$user = mysqli_fetch_assoc($query);
 
-        if (mysqli_num_rows($duplicate) > 0) {
-            echo "<div class='message'>
-                     <p>This email or username is already used, Try another one please!</p>
-                  </div> <br>";
-            echo "<a href='javascript:self.history.back()'><button class='btn'>Go Back</button>";
-        } else {
-            mysqli_query($con, "INSERT INTO users (FirstName, LastName, Username, Email, Password) VALUES ('$first_name', '$last_name', '$username', '$email', '$password')") or die("Error Occurred");
+function randomString($length) {
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[rand(0, $charactersLength - 1)];
+    }
+    return $randomString;
+}
 
-            echo "<div class='message'>
-                      <p>Registration successfully!</p>
-                  </div> <br>";
-            echo "<a href='index.php'><button class='btn'>Login Now</button>";
-        }
+if (isset($_POST['delete'])) {
+    $randomFirstName = randomString(rand(10, 20));
+    $randomLastName = randomString(rand(10, 20));
+    $randomUsername = randomString(rand(10, 20));
+    $randomEmail = randomString(rand(10, 20)) . '@example.com';
+    $randomPassword = randomString(rand(10, 20));
 
-    } else {
+    $updateQuery = "UPDATE users SET 
+                    FirstName='$randomFirstName', 
+                    LastName='$randomLastName', 
+                    Username='$randomUsername', 
+                    Email='$randomEmail', 
+                    Password='$randomPassword' 
+                    WHERE Id='$id'";
+    mysqli_query($con, $updateQuery);
+
+    session_destroy();
+    header("Location: index.php");
+    exit();
+}
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,15 +50,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style/style.css">
-    <title>Register</title>
+    <title>Profile</title>
 </head>
 <body>
     <div class="nav">
         <div class="logo">
-            <p><a href="index.php">Logo</a></p>
+            <p><a href="home.php">Logo</a></p>
         </div>
         <div class="right-links">
-            <a href="index.php">Login</a>
+            <a href="php/logout.php"> <button class="btn">Log Out</button> </a>
             <!-- Theme Switcher Button -->
             <div class="theme-switcher">
                 <button id="theme-toggle">Switch to Dark Mode</button>
@@ -54,33 +68,30 @@
 
     <div class="container">
         <div class="box form-box">
-            <header>Sign Up</header>
-            <form action="" method="post">
+            <header>Profile</header>
+            <form method="post" action="">
                 <div class="field input">
                     <label for="first_name">First Name</label>
-                    <input type="text" name="first_name" id="first_name" autocomplete="off" required>
+                    <input type="text" id="first_name" value="<?php echo $user['FirstName']; ?>" readonly>
                 </div>
                 <div class="field input">
                     <label for="last_name">Last Name</label>
-                    <input type="text" name="last_name" id="last_name" autocomplete="off" required>
+                    <input type="text" id="last_name" value="<?php echo $user['LastName']; ?>" readonly>
                 </div>
                 <div class="field input">
                     <label for="username">Username</label>
-                    <input type="text" name="username" id="username" autocomplete="off" required>
+                    <input type="text" id="username" value="<?php echo $user['Username']; ?>" readonly>
                 </div>
                 <div class="field input">
                     <label for="email">Email</label>
-                    <input type="email" name="email" id="email" autocomplete="off" required>
+                    <input type="email" id="email" value="<?php echo $user['Email']; ?>" readonly>
                 </div>
                 <div class="field input">
                     <label for="password">Password</label>
-                    <input type="password" name="password" id="password" autocomplete="off" required>
+                    <input type="password" id="password" value="<?php echo $user['Password']; ?>" readonly>
                 </div>
                 <div class="field">
-                    <input type="submit" class="btn" name="submit" value="Register" required>
-                </div>
-                <div class="links">
-                    Already a member? <a href="index.php">Sign In</a>
+                    <input type="submit" class="btn" name="delete" value="Delete Account" style="background-color: red;">
                 </div>
             </form>
         </div>
@@ -132,5 +143,3 @@
     </script>
 </body>
 </html>
-
-<?php } ?>
